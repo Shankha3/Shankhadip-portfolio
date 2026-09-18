@@ -28,7 +28,15 @@ chatbotClose.addEventListener("click", () => {
 function addMessage(message, type) {
     const div = document.createElement("div");
     div.className = type === "user" ? "user-message" : "bot-message";
-    div.textContent = message;
+
+    if (type === "bot") {
+        div.innerHTML = message
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+    } else {
+        div.textContent = message;
+    }
+
     chatbotMessages.appendChild(div);
     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 }
