@@ -10,18 +10,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Message is required" });
         }
 
-        const response = await fetch("https://api.openai.com/v1/responses", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-5-mini",
-                input: [
-                    {
-                        role: "system",
-                        content: `You are Shankhadip Mondal's personal portfolio AI assistant.
+        const systemPrompt = `You are Shankhadip Mondal's personal portfolio AI assistant.
 
 Answer questions about Shankhadip using only the information below.
 
@@ -60,26 +49,53 @@ Phone: 9732040340
 GitHub: https://github.com/Shankha3
 LinkedIn: https://linkedin.com/in/shankhadip-mondal-064256326
 
-Keep answers concise, friendly and professional. If asked something unrelated to Shankhadip, politely say that you are his portfolio assistant and can answer questions about his background, skills, education, projects and contact information.`
+Keep answers concise, friendly and professional.
+
+If asked something unrelated to Shankhadip, politely say that you are his portfolio assistant and can answer questions about his background, skills, education, projects and contact information.`;
+
+        const response = await fetch(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": process.env.GEMINI_API_KEY
+                },
+                body: JSON.stringify({
+                    system_instruction: {
+                        parts: [
+                            {
+                                text: systemPrompt
+                            }
+                        ]
                     },
-                    {
-                        role: "user",
-                        content: message
-                    }
-                ]
-            })
-        });
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: message
+                                }
+                            ]
+                        }
+                    ]
+                })
+            }
+        );
 
         const data = await response.json();
 
         if (!response.ok) {
             return res.status(response.status).json({
-                error: data.error?.message || "AI request failed"
+                error: data.error?.message || "Gemini request failed"
             });
         }
 
+        const reply =
+            data.candidates?.[0]?.content?.parts?.[0]?.text ||
+            "Sorry, I couldn't generate a response.";
+
         return res.status(200).json({
-            reply: data.output_text
+            reply
         });
     } catch (error) {
         return res.status(500).json({
