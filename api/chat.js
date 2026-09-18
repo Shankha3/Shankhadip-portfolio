@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { message } = req.body;
+        const { message, history = [] } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: "Message is required" });
@@ -50,11 +50,20 @@ GitHub: https://github.com/Shankha3
 LinkedIn: https://linkedin.com/in/shankhadip-mondal-064256326
 
 Keep answers concise, friendly and professional.
-
+Use the conversation history to understand follow-up questions.
 If asked something unrelated to Shankhadip, politely say that you are his portfolio assistant and can answer questions about his background, skills, education, projects and contact information.`;
 
+        const contents = history.map(item => ({
+            role: item.role,
+            parts: [
+                {
+                    text: item.content
+                }
+            ]
+        }));
+
         const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
             {
                 method: "POST",
                 headers: {
@@ -69,15 +78,7 @@ If asked something unrelated to Shankhadip, politely say that you are his portfo
                             }
                         ]
                     },
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    text: message
-                                }
-                            ]
-                        }
-                    ]
+                    contents
                 })
             }
         );

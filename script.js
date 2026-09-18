@@ -41,6 +41,8 @@ function addMessage(message, type) {
     chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
 }
 
+let chatHistory = [];
+
 async function sendMessage() {
     const message = chatbotInput.value.trim();
 
@@ -49,25 +51,38 @@ async function sendMessage() {
     addMessage(message, "user");
     chatbotInput.value = "";
 
-try {
-    const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message })
+    chatHistory.push({
+        role: "user",
+        content: message
     });
 
-    const data = await response.json();
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message,
+                history: chatHistory
+            })
+        });
 
-    if (!response.ok) {
-        throw new Error(data.error || "Request failed");
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Request failed");
+        }
+
+        addMessage(data.reply, "bot");
+
+        chatHistory.push({
+            role: "model",
+            content: data.reply
+        });
+    } catch (error) {
+        addMessage("Sorry, I couldn't connect to the AI right now.", "bot");
     }
-
-    addMessage(data.reply, "bot");
-} catch (error) {
-    addMessage("Sorry, I couldn't connect to the AI right now.", "bot");
-}
 }
 
 chatbotSend.addEventListener("click", sendMessage);
